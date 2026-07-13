@@ -156,23 +156,31 @@ class G complete;
 
 #### 도입 결과
 
-<table>
-  <tr>
-    <td align="center">
-      <strong>기존 방식</strong><br />
-      <img
-        src="./assets/deploy-before.png"
-        alt="기존 배포 소요 시간"
-        width="420"
-      />
-    </td>
-    <td align="center">
-      <strong>개선 방식</strong><br />
-      <img
-        src="./assets/deploy-after.png"
-        alt="개선 후 배포 소요 시간"
-        width="420"
-      />
-    </td>
-  </tr>
-</table>
+##### 기존 방식
+
+<p align="center">
+  <img
+    src="./assets/deploy-before.png"
+    alt="기존 배포 방식"
+    width="900"
+  />
+</p>
+
+##### 개선 방식
+
+<p align="center">
+  <img
+    src="./assets/deploy-after.png"
+    alt="개선된 배포 방식"
+    width="900"
+  />
+</p>
+
+EC2에서 Docker 이미지를 직접 빌드하던 기존 방식은 캐시가 적용된 재배포에서도 약 6분 42초가 소요되었습니다. 
+GHCR에서 미리 빌드한 이미지를 내려받아 실행하는 구조로 전환한 결과, 배포 시간을 **1분 37초까지 줄여 약 76% 단축**했습니다.
+
+| 배포 방식 | 배포 시간 |
+|---|---:|
+| EC2 직접 빌드 | **6분 42초** |
+| GHCR 기반 배포 | **1분 37초** |
+| 개선 결과 | **약 76% 단축** |
