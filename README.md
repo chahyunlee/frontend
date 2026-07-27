@@ -24,16 +24,7 @@
 
 ## 주요 역할
 
-### 렌더링 성능 개선
-
-메인 페이지의 LCP를 **2.6초에서 1.3초로 약 50% 개선**했습니다.
-
-- LCP 이미지 요청 방식 개선
-- 이미지 크기 및 `sizes` 최적화
-- 초기 로딩 폰트 정리
-- Lighthouse와 Chrome Performance를 함께 사용해 병목 구간 분석
-
-### Github actions CI 구축
+### 🚀 GitHub Actions CI 구축
 
 ```mermaid
 flowchart LR
@@ -76,9 +67,14 @@ class I success;
 class J fail;
 ```
 
-### CD 파이프라인 개선 제안
+> [!NOTE]
+> Pull Request와 Push 시 **Type Check → ESLint → Vitest → Storybook Build → Next.js Build**를 순차적으로 수행하도록 CI를 구축했습니다. 검증을 모두 통과한 경우에만 병합이 가능하도록 하여 코드 품질과 배포 안정성을 확보했습니다.
 
-#### 기존 방식
+---
+
+## 🚀 CD 파이프라인 개선 제안
+
+### 기존 방식
 
 초기에는 GitHub Actions가 EC2에 직접 접속하여 서버에서 이미지를 빌드하고 서비스를 배포하는 구조를 사용했습니다.
 
@@ -105,11 +101,14 @@ classDef complete fill:#DCFCE7,stroke:#22C55E,color:#166534,stroke-width:2px;
 class G complete;
 ```
 
-하지만 EC2에서 매번 이미지를 직접 빌드하면서 배포 시간이 길어졌고, 서버의 CPU와 메모리 자원을 빌드 과정이 함께 사용해 배포 안정성도 낮아지는 문제가 있었습니다.
+> [!NOTE]
+> 기존 구조에서는 **EC2가 서비스 실행과 Docker 이미지 빌드를 모두 담당**했습니다. 배포 시마다 서버에서 Docker 이미지를 새로 빌드하면서 CPU와 메모리를 함께 사용했고, 배포 시간이 길어질 뿐 아니라 운영 중인 서비스에도 영향을 줄 수 있는 구조였습니다.
 
-이를 개선하기 위해 인프라 담당자에게 **GitHub Actions에서 이미지를 미리 빌드한 뒤 GHCR에 저장하고, EC2에서는 완성된 이미지만 내려받아 실행하는 방식**을 제안했습니다.
+---
 
-#### 제안한 방식
+### 개선 제안
+
+빌드 환경과 실행 환경을 분리하기 위해 **GitHub Actions에서 Docker 이미지를 미리 빌드하여 GHCR에 저장하고, EC2에서는 완성된 이미지만 내려받아 실행하는 구조**를 인프라 담당자에게 제안했습니다.
 
 ```mermaid
 flowchart LR
@@ -137,26 +136,38 @@ GHCR -->|Pull Image| D
 
 D --> E --> F --> G[🚀 Deploy Complete]
 
-%% ===== Group =====
 style BUILD fill:#F8FAFC,stroke:#CBD5E1,color:#475569
 style DEPLOY fill:#F8FAFC,stroke:#CBD5E1,color:#475569
 
-%% ===== Node =====
 classDef default fill:#EEF4FF,stroke:#4F7DFF,color:#2455D6,stroke-width:2px;
-
-%% ===== GHCR =====
 classDef registry fill:#FFF7ED,stroke:#F59E0B,color:#92400E,stroke-width:2.5px;
-
-%% ===== Complete =====
 classDef complete fill:#DCFCE7,stroke:#22C55E,color:#166534,stroke-width:2px;
 
 class GHCR registry;
 class G complete;
 ```
 
-#### 도입 결과
+> [!NOTE]
+> GitHub Actions에서 Docker 이미지를 먼저 빌드한 뒤 GHCR에 저장하도록 변경하여 **빌드와 실행의 책임을 분리**했습니다.
+>
+> - **GitHub Actions** : Docker 이미지 빌드 및 Push
+> - **GHCR** : 버전별 이미지 저장
+> - **EC2** : Docker Pull 및 서비스 실행
+>
+> 이를 통해 EC2는 이미지 빌드를 수행하지 않고, 검증된 이미지만 실행하도록 단순화했습니다.
+> GHCR은 GitHub Actions와 동일한 GitHub 생태계에서 사용할 수 있어 별도의 Registry 계정이나 복잡한 인증 구성이 필요하지 않았습니다. 또한 `GITHUB_TOKEN`을 활용하여 이미지 Push와 Pull을 하나의 워크플로에서 관리할 수 있다는 장점이 있어 도입했습니다.
 
-##### 기존 방식
+---
+
+## 📈 도입 결과
+
+| 배포 방식 | 배포 시간 |
+|---|---:|
+| EC2 직접 빌드 | **6분 42초** |
+| GHCR 기반 배포 | **1분 37초** |
+| 개선 결과 | **약 76% 단축** |
+
+### 기존 방식
 
 <p align="center">
   <img
@@ -166,7 +177,7 @@ class G complete;
   />
 </p>
 
-##### 개선 방식
+### 개선 방식
 
 <p align="center">
   <img
@@ -176,11 +187,8 @@ class G complete;
   />
 </p>
 
-EC2에서 Docker 이미지를 직접 빌드하던 기존 방식은 캐시가 적용된 재배포에서도 약 6분 42초가 소요되었습니다. 
-GHCR에서 미리 빌드한 이미지를 내려받아 실행하는 구조로 전환한 결과, 배포 시간을 **1분 37초까지 줄여 약 76% 단축**했습니다.
-
-| 배포 방식 | 배포 시간 |
-|---|---:|
-| EC2 직접 빌드 | **6분 42초** |
-| GHCR 기반 배포 | **1분 37초** |
-| 개선 결과 | **약 76% 단축** |
+> [!IMPORTANT]
+> EC2에서 Docker 이미지를 직접 빌드하던 기존 방식은 **캐시가 적용된 재배포에서도 약 6분 42초**가 소요되었습니다.
+>
+> GitHub Actions에서 이미지를 미리 빌드하여 GHCR에 저장하고, EC2에서는 이미지를 Pull하여 실행하는 구조로 개선한 결과 **1분 37초**로 단축되어 **약 76%의 배포 시간 감소**를 달성했습니다.
+> **빌드 환경과 실행 환경을 분리**하여 EC2의 CPU와 메모리 사용량을 줄였고, 운영 중인 서비스가 배포 작업의 영향을 덜 받도록 배포 안정성을 함께 개선했습니다.
