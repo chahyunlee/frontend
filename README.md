@@ -74,6 +74,8 @@ class J fail;
 
 ## 🚀 CD 파이프라인 개선 제안
 
+👉 [EC2 직접 빌드에서 GHCR 기반 배포로 전환한 과정 자세한 스토리](https://velog.io/@chahyunnee/GitHub-Actions-CD-%EC%B5%9C%EC%A0%81%ED%99%94-Docker-Hub-%EB%8C%80%EC%8B%A0-GHCR%EC%9D%84-%EC%84%A0%ED%83%9D%ED%95%9C-%EC%9D%B4%EC%9C%A0)
+
 ### 기존 방식
 
 초기에는 GitHub Actions가 EC2에 직접 접속하여 서버에서 이미지를 빌드하고 서비스를 배포하는 구조를 사용했습니다.
